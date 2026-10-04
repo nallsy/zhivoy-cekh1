@@ -3,7 +3,7 @@
 
 1. Генерирует синтетическую историю работы сварочного робота за 90 дней
    (2 смены по 8 часов). Модель деградации и датчиков та же, что в
-   симуляторе js/sim.js (константы SENSOR_MODEL ниже должны совпадать).
+   симуляторе sim.js (константы SENSOR_MODEL ниже должны совпадать).
 2. Каждые 10 минут считает признаки за последние 30 минут:
    - ct_drift      — рост времени цикла относительно номинала;
    - ms_rate       — доля циклов с микроостановками;
@@ -11,9 +11,9 @@
    - hours_service — часы работы с последнего ППР/ремонта.
 3. Метка: произойдёт ли отказ в ближайшие 60 минут.
 4. Обучает логистическую регрессию (scikit-learn), проверяет её
-   на последних 20 днях и выгружает коэффициенты в js/risk_model.js.
+   на последних 20 днях и выгружает коэффициенты в risk_model.js.
 
-Запуск:  pip install -r ml/requirements.txt && python ml/train_risk_model.py
+Запуск:  pip install -r requirements.txt && python train_risk_model.py
 """
 import json
 import math
@@ -26,10 +26,10 @@ from sklearn.metrics import (brier_score_loss, precision_score,
                              recall_score, roc_auc_score)
 from sklearn.preprocessing import StandardScaler
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent
 SEED = 2026
 
-# --- Модель деградации и датчиков (совпадает с js/sim.js) ---
+# --- Модель деградации и датчиков (совпадает с sim.js) ---
 SENSOR_MODEL = {
     "nominal_ct": 4.6,          # мин/кузов, сварка WR-04
     "ct_drift_k": 0.25,         # ct = nominal * (1 + k * (1-h)^2)
@@ -140,8 +140,7 @@ def main():
     rng = np.random.default_rng(SEED)
     cyc, failures = simulate(rng)
     df = build_dataset(cyc, failures)
-    (ROOT / "data").mkdir(exist_ok=True)
-    df.round(4).to_csv(ROOT / "data" / "welding_history_90d.csv", index=False)
+    df.round(4).to_csv(ROOT / "welding_history_90d.csv", index=False)
 
     train, test = df[df.day <= 70], df[df.day > 70]
     scaler = StandardScaler().fit(train[FEATURES])
@@ -181,9 +180,9 @@ def main():
         "metrics": metrics,
         "sensor_model": SENSOR_MODEL,
     }
-    (ROOT / "ml" / "risk_model.json").write_text(json.dumps(export, ensure_ascii=False, indent=2), encoding="utf-8")
-    (ROOT / "js" / "risk_model.js").write_text(
-        "// Сгенерировано ml/train_risk_model.py — не редактировать вручную\n"
+    (ROOT / "risk_model.json").write_text(json.dumps(export, ensure_ascii=False, indent=2), encoding="utf-8")
+    (ROOT / "risk_model.js").write_text(
+        "// Сгенерировано train_risk_model.py — не редактировать вручную\n"
         "window.RISK_MODEL = " + json.dumps(export, ensure_ascii=False, indent=2) + ";\n", encoding="utf-8")
 
     report = [
@@ -195,7 +194,7 @@ def main():
         "| Признак | Коэффициент |", "| --- | --- |",
     ] + [f"| {f} | {c:+.3f} |" for f, c in zip(FEATURES, model.coef_[0])] + [
         "", "Данные синтетические: обучение показывает принцип. На заводе модель переобучается на реальных логах MES/SCADA."]
-    (ROOT / "ml" / "REPORT.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+    (ROOT / "REPORT.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     print(json.dumps(metrics, ensure_ascii=False, indent=2))
     print(dict(zip(FEATURES, model.coef_[0].round(3))))
 

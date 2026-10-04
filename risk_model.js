@@ -1,4 +1,4 @@
-// Сгенерировано ml/train_risk_model.py — не редактировать вручную
+// Сгенерировано train_risk_model.py — не редактировать вручную
 window.RISK_MODEL = {
   "features": [
     "ct_drift",

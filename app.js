@@ -1,4 +1,4 @@
-/* «Живой цех» — интерфейс цифрового двойника. Вся логика модели — в js/sim.js. */
+/* «Живой цех» — интерфейс цифрового двойника. Вся логика модели — в sim.js. */
 (function () {
   'use strict';
   const T = window.Twin, C = T.CONFIG, RM = window.RISK_MODEL;
@@ -44,7 +44,7 @@
       '<div class="loadrow" id="ld-' + st.id + '"><span>' + st.name + '</span><div class="stack"><i style="background:#58d67b"></i><i style="background:#ef6666"></i><i style="background:#e8a63c"></i></div><strong>—</strong></div>').join('');
     const m = RM.metrics;
     $('modelNote').innerHTML = 'Логистическая регрессия по трём признакам за 30 минут. ROC-AUC ' + m.roc_auc +
-      ' на днях ' + m.test_days + ', которые не участвовали в обучении. <a href="https://github.com/nallsy/zhivoy-cekh/blob/main/ml/REPORT.md">Отчёт модели</a>';
+      ' на днях ' + m.test_days + ', которые не участвовали в обучении. <a href="https://github.com/nallsy/zhivoy-cekh1/blob/main/REPORT.md">Отчёт модели</a>';
   }
 
   function reset() {

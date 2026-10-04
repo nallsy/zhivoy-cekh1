@@ -1,6 +1,6 @@
 /*
  * «Живой цех» — дискретная симуляция сборочной линии (цифровой двойник).
- * Модель износа и датчиков совпадает с ml/train_risk_model.py,
+ * Модель износа и датчиков совпадает с train_risk_model.py,
  * поэтому обученная там модель риска применяется к данным этой симуляции.
  * Не зависит от DOM: можно запускать в браузере и в Node.js.
  */
@@ -21,7 +21,7 @@
     reserveSlowdown: 1.7,     // резервный пост медленнее основного
     pmDelay: 120,             // «перенести ППР» = через 2 часа
     obsEvery: 5,              // пересчёт риска, мин
-    warn: 0.25,               // порог предупреждения (как в ml/REPORT.md)
+    warn: 0.25,               // порог предупреждения (как в REPORT.md)
     crit: 0.5,
     stations: [
       { id: 'warehouse', name: 'Склад', code: 'KT-01', ct: 3.9, h: 0.93, since: 6, tempBase: 35, queue: 0 },
@@ -268,7 +268,7 @@
     }
   }
 
-  // ---------- модель риска (коэффициенты из ml/risk_model.json) ----------
+  // ---------- модель риска (коэффициенты из risk_model.json) ----------
   function riskOf(feats) {
     const contrib = RM.features.map((f, k) => ((feats[f] - RM.mean[k]) / RM.std[k]) * RM.coef[k]);
     const z = RM.intercept + contrib.reduce((a, b) => a + b, 0);
