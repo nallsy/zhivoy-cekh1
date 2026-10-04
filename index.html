@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Живой цех — цифровой двойник автомобильного завода</title>
+<meta name="description" content="Цифровой двойник сборочной линии: симуляция в реальном времени, ИИ-прогноз отказов, поиск узкого места и сравнение сценариев. Команда «Лава», кейс №2 Qostanai Industry Hackathon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="team">Команда «Лава» · кейс №2 Qostanai Industry Hackathon</p>
+    <h1>Живой цех</h1>
+    <p class="sub">Цифровой двойник сборочной линии L-01</p>
+  </div>
+  <div class="clockbox">
+    <span class="dot" id="liveDot"></span>
+    <div><strong id="clock">10:00</strong><small>модельное время · смена 10:00–18:00</small></div>
+  </div>
+</header>
+
+<main>
+<section class="controls" aria-label="Управление симуляцией">
+  <span class="mode ok" id="mode">Норма</span>
+  <div class="ctrl">
+    <button id="playBtn" class="primary">▶ Запустить смену</button>
+    <div class="seg" role="group" aria-label="Скорость">
+      <button data-speed="1">1 мин/с</button>
+      <button data-speed="3" class="on">3 мин/с</button>
+      <button data-speed="10">10 мин/с</button>
+    </div>
+    <button id="failBtn" title="Демонстрация: мгновенный отказ сварочного робота">Внести отказ WR-04</button>
+    <button id="resetBtn">Сбросить</button>
+  </div>
+</section>
+
+<section class="kpis">
+  <div class="kpi"><span>Выпуск</span><strong id="kOut">0</strong><small id="kOutSub">план к этому часу: 0</small></div>
+  <div class="kpi"><span>Прогноз к 18:00</span><strong id="kFc">—</strong><small id="kFcSub">считается…</small></div>
+  <div class="kpi"><span>OEE линии</span><strong id="kOee">—</strong><small id="kOeeSub">доступность · производительность · качество</small></div>
+  <div class="kpi"><span>Простой оборудования</span><strong id="kDown">0 мин</strong><small id="kDownSub">отказов: 0</small></div>
+  <div class="kpi"><span>Брак</span><strong id="kDef">0%</strong><small id="kDefSub">проверено: 0</small></div>
+  <div class="kpi"><span>Незавершённое производство</span><strong id="kWip">0</strong><small id="kWipSub">кузовов на линии</small></div>
+</section>
+
+<section class="workspace">
+  <div class="leftcol">
+  <div class="card">
+    <div class="card-head">
+      <div><h2>Карта линии</h2><p class="muted">Нажмите на пост, чтобы увидеть прогноз по нему</p></div>
+      <div class="legend"><i class="lg ok"></i>работает <i class="lg idle"></i>ждёт кузов <i class="lg warn"></i>заблокирован <i class="lg bad"></i>простой</div>
+    </div>
+    <div class="line" id="lineMap"></div>
+    <div class="line-foot">
+      <span>Фактический такт: <b id="takt">—</b></span>
+      <span>Узкое место: <b id="bnFoot">—</b></span>
+      <span>Выпущено: <b id="outFoot">0</b> из <b id="planFoot">100</b></span>
+    </div>
+  </div>
+  <div class="grid charts">
+  <div class="card">
+    <div class="card-head"><div><h2>Выпуск против плана</h2><p class="muted">накопительно за смену и прогноз до 18:00</p></div>
+      <div class="legend"><i class="ln act"></i>факт <i class="ln plan"></i>план <i class="ln fc"></i>прогноз</div></div>
+    <svg class="chart" id="chart" viewBox="0 0 640 240" aria-label="График выпуска"></svg>
+  </div>
+  <div class="card">
+    <div class="card-head"><div><h2>Загрузка постов</h2><p class="muted">за последний час</p></div>
+      <div class="legend"><i class="lg ok"></i>работа <i class="lg bad"></i>простой <i class="lg warn"></i>блокировка <i class="lg idle"></i>ожидание</div></div>
+    <div class="loads" id="loads"></div>
+  </div>
+</div>
+  </div>
+
+  <aside class="card ai">
+    <div class="card-head">
+      <div><h2>ИИ-прогноз отказов</h2><p class="muted">вероятность отказа в ближайшие 60 минут</p></div>
+    </div>
+    <div class="risklist" id="riskList"></div>
+    <div class="riskcard">
+      <div class="risk-top"><b id="rName">Сварка · WR-04</b><strong id="rVal">—</strong></div>
+      <div class="rbar"><i id="rBar"></i><em class="tick" style="left:25%"></em><em class="tick" style="left:50%"></em></div>
+      <svg class="spark" id="spark" viewBox="0 0 300 60" preserveAspectRatio="none" aria-label="Риск за последние 2 часа"></svg>
+      <p class="muted small">Риск за последние 2 часа · пороги 25% и 50%</p>
+      <div class="factors" id="factors"></div>
+      <p class="model-note" id="modelNote"></p>
+    </div>
+    <div class="recommend" id="recBox">
+      <b>Рекомендация</b>
+      <p id="recText">Запустите смену: двойник оценит варианты действий, когда риск превысит порог.</p>
+      <button id="recApply" class="primary" hidden></button>
+    </div>
+  </aside>
+</section>
+
+<section class="grid lower">
+  <div class="card">
+    <div class="card-head"><div><h2>Журнал событий</h2><p class="muted">отклонения, отказы и решения за смену</p></div><span class="counter" id="evCount">0</span></div>
+    <div class="events" id="events"></div>
+  </div>
+
+  <div class="card whatif">
+    <div class="card-head"><div><h2>Что если</h2><p class="muted">сравнение решений до вмешательства в реальный процесс</p></div></div>
+    <div class="wf-ctrl">
+      <label for="wfStation">Пост</label>
+      <select id="wfStation"></select>
+      <button id="wfRun" class="primary">Рассчитать варианты</button>
+    </div>
+    <div class="table-wrap">
+      <table class="wf">
+        <thead><tr><th>Вариант</th><th>Выпуск к 18:00</th><th>Простой</th><th>Риск отказа до конца смены</th><th>Эффект</th><th></th></tr></thead>
+        <tbody id="wfBody"><tr><td colspan="6" class="muted">Нажмите «Рассчитать варианты»: двойник прогонит каждый вариант 40 раз до конца смены.</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted small" id="wfNote">Все варианты считаются на одних и тех же случайных сценариях, диапазон — от 10-го до 90-го перцентиля.</p>
+
+    <div class="economics">
+      <div class="econ-head"><b>Экономический эффект</b><span class="tag">демонстрационные допущения, не данные АЛЛЮР</span></div>
+      <div class="econ-inputs">
+        <label>Сохранено авто за смену<input id="eCars" type="number" value="0" min="0" step="0.5"></label>
+        <label>Маржа на авто, ₸<input id="eMargin" type="number" value="150000" min="0" step="10000"></label>
+        <label>Таких ситуаций в год<input id="eTimes" type="number" value="12" min="0" step="1"></label>
+      </div>
+      <div class="econ-result"><span>Эффект за смену</span><strong id="eShift">0 ₸</strong></div>
+      <div class="econ-result"><span>Эффект за год</span><strong id="eYear">0 ₸</strong></div>
+      <p class="formula">Эффект = сохранённые авто × маржа × число ситуаций в год. <span id="eRange"></span></p>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="card summary">
+  <div class="card-head"><div><h2>Сводка смены</h2><p class="muted">собирается из событий и показателей двойника</p></div><button id="sumBtn">Сформировать сводку</button></div>
+  <ul id="summary"><li class="muted">Сводка появится по кнопке или автоматически в конце смены.</li></ul>
+</section>
+
+<section class="card method">
+  <div>
+    <b>Как это работает</b>
+    <p>Симулятор линии (время цикла, износ, отказы, буферы) → показатели OEE, простой, брак → модель риска отказа, обученная на 90 днях истории (<a href="https://github.com/nallsy/zhivoy-cekh/blob/main/ml/REPORT.md">отчёт модели</a>, <a href="data/welding_history_90d.csv">данные</a>) → сравнение решений методом Монте-Карло → рекомендация руководителю.</p>
+  </div>
+  <span class="tag">Синтетические данные. На заводе симулятор заменяется данными MES, SCADA и 1С.</span>
+</section>
+</main>
+
+<footer>Команда «Лава» · Костанайский региональный университет имени Ахмет Байтұрсынұлы · Костанай</footer>
+
+<script src="js/risk_model.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
